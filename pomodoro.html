@@ -1,358 +1,499 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🍅 番茄钟 - Pomodoro Timer</title>
+<title>🍅 番茄钟</title>
 <style>
-  :root {
-    --work: #e74c3c;
-    --work-light: #fce4e4;
-    --short-break: #2ecc71;
-    --short-break-light: #e4fce8;
-    --long-break: #3498db;
-    --long-break-light: #e4f0fc;
-    --bg: #f5f0eb;
-    --card: #ffffff;
-    --text: #2c3e50;
-    --text-secondary: #7f8c8d;
-    --border: #e8e0d8;
-    --shadow: 0 4px 24px rgba(0,0,0,0.06);
-    --radius: 20px;
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ═══════════════════════════════════════════
+   1. CSS 变量 + 全局样式
+   ═══════════════════════════════════════════ */
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    display: flex; justify-content: center; align-items: center;
-    min-height: 100vh;
-    user-select: none;
-    -webkit-user-select: none;
-  }
+/* ── 深色主题（默认） ── */
+:root {
+  --bg: #0f0f1a;
+  --card: #1a1a2e;
+  --card-hover: #1f1f38;
+  --text: #e8e8ec;
+  --text-secondary: #8b8b9e;
+  --border: #2a2a3e;
+  --mode-pill-bg: #12122a;
+  --mode-active: #252545;
+  --stat-bg: #12122a;
+  --input-bg: #12122a;
+  --input-border: #2a2a3e;
+  --ring-track: #2a2a3e;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --toast-bg: #2c2c50;
+  --btn-dark: #3a3a5c;
+  --btn-dark-hover: #4a4a6c;
+  --task-hover: #12122a;
+  --chart-bar: #3a5a8c;
+  --chart-bar-today: #e74c3c;
+  --accent: #e74c3c;
+  --accent-green: #2ecc71;
+  --accent-blue: #3498db;
+  --accent-light: rgba(231,76,60,0.15);
+  --accent-green-light: rgba(46,204,113,0.15);
+  --accent-blue-light: rgba(52,152,219,0.15);
+}
 
-  .app {
-    display: grid;
-    grid-template-columns: 1fr 360px;
-    gap: 24px;
-    max-width: 800px;
-    width: 100%;
-    padding: 24px;
-  }
+/* ── 浅色主题 ── */
+[data-theme="light"] {
+  --bg: #f5f0eb;
+  --card: #ffffff;
+  --card-hover: #faf8f5;
+  --text: #2c3e50;
+  --text-secondary: #7f8c8d;
+  --border: #e8e0d8;
+  --mode-pill-bg: #f0ebe3;
+  --mode-active: #ffffff;
+  --stat-bg: #faf8f5;
+  --input-bg: #ffffff;
+  --input-border: #e8e0d8;
+  --ring-track: #e8e8e8;
+  --shadow: 0 4px 24px rgba(0,0,0,0.06);
+  --toast-bg: #2c3e50;
+  --btn-dark: #2c3e50;
+  --btn-dark-hover: #1a252f;
+  --task-hover: #f5f0eb;
+  --chart-bar: #bcccdc;
+  --chart-bar-today: #e74c3c;
+}
 
-  @media (max-width: 700px) {
-    .app { grid-template-columns: 1fr; max-width: 400px; }
-  }
+/* ── 全局 ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* ---- Timer Card ---- */
-  .timer-card {
-    background: var(--card);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 40px 32px;
-    display: flex; flex-direction: column; align-items: center; gap: 20px;
-  }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex; justify-content: center; align-items: center;
+  min-height: 100vh;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.4s ease, color 0.4s ease;
+}
 
-  /* Mode tabs */
-  .modes {
-    display: flex;
-    gap: 6px;
-    background: #f0ebe3;
-    border-radius: 30px;
-    padding: 4px;
-  }
-  .mode-btn {
-    border: none;
-    background: transparent;
-    padding: 8px 18px;
-    border-radius: 26px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    color: var(--text-secondary);
-    transition: all 0.25s;
-    white-space: nowrap;
-  }
-  .mode-btn.active {
-    background: white;
-    color: var(--text);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  }
-  .mode-btn:hover:not(.active) { color: var(--text); }
+.app {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 24px;
+  max-width: 860px;
+  width: 100%;
+  padding: 24px;
+}
 
-  /* Progress ring + timer */
-  .ring-container {
-    position: relative;
-    width: 260px;
-    height: 260px;
-  }
-  .ring-container svg {
-    transform: rotate(-90deg);
-    width: 260px; height: 260px;
-  }
-  .ring-bg {
-    fill: none;
-    stroke: #eee;
-    stroke-width: 8;
-  }
-  .ring-progress {
-    fill: none;
-    stroke: var(--work);
-    stroke-width: 8;
-    stroke-linecap: round;
-    transition: stroke-dashoffset 0.4s linear, stroke 0.4s;
-  }
-  .ring-progress.break-mode { stroke: var(--short-break); }
-  .ring-progress.long-break-mode { stroke: var(--long-break); }
+@media (max-width: 720px) {
+  .app { grid-template-columns: 1fr; max-width: 400px; }
+}
 
-  .timer-display {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-  }
-  .timer-time {
-    font-size: 56px;
-    font-weight: 700;
-    letter-spacing: -1px;
-    font-variant-numeric: tabular-nums;
-    font-family: 'SF Mono', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-  }
-  .timer-label {
-    font-size: 14px;
-    color: var(--text-secondary);
-    font-weight: 500;
-  }
+/* ═══════════════════════════════════════════
+   2. 计时器卡片
+   ═══════════════════════════════════════════ */
 
-  /* Buttons */
-  .controls {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-  }
-  .btn {
-    border: none;
-    cursor: pointer;
-    font-size: 15px;
-    font-weight: 600;
-    padding: 12px 32px;
-    border-radius: 30px;
-    transition: all 0.2s;
-    font-family: inherit;
-  }
-  .btn:active { transform: scale(0.96); }
+.timer-card {
+  background: var(--card);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 40px 32px;
+  display: flex; flex-direction: column; align-items: center; gap: 24px;
+  transition: background 0.4s ease, box-shadow 0.4s ease;
+}
 
-  .btn-start {
-    background: #2c3e50;
-    color: white;
-    font-size: 16px;
-    padding: 14px 48px;
-    letter-spacing: 0.5px;
-  }
-  .btn-start:hover { background: #1a252f; }
-  .btn-start.paused { background: var(--work); }
-  .btn-start.paused:hover { background: #c0392b; }
+/* 模式切换 */
+.modes {
+  display: flex;
+  gap: 6px;
+  background: var(--mode-pill-bg);
+  border-radius: 30px;
+  padding: 4px;
+  transition: background 0.4s ease;
+}
+.mode-btn {
+  border: none;
+  background: transparent;
+  padding: 8px 18px;
+  border-radius: 26px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.25s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.mode-btn.active {
+  background: var(--mode-active);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.mode-btn:hover:not(.active) { color: var(--text); }
 
-  .btn-reset {
-    background: transparent;
-    color: var(--text-secondary);
-    padding: 10px;
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-  }
-  .btn-reset:hover { background: #f0ebe3; color: var(--text); }
+/* 环形进度 */
+.ring-container {
+  position: relative;
+  width: 260px;
+  height: 260px;
+}
+.ring-container svg {
+  transform: rotate(-90deg);
+  width: 260px; height: 260px;
+}
+.ring-bg {
+  fill: none;
+  stroke: var(--ring-track);
+  stroke-width: 8;
+  transition: stroke 0.4s ease;
+}
+.ring-progress {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s linear, stroke 0.4s ease;
+}
+.ring-progress.break-mode { stroke: var(--accent-green); }
+.ring-progress.long-break-mode { stroke: var(--accent-blue); }
 
-  .btn-skip {
-    background: transparent;
-    color: var(--text-secondary);
-    padding: 10px 20px;
-    font-size: 13px;
-  }
-  .btn-skip:hover { color: var(--text); }
+.timer-display {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.timer-time {
+  font-size: 56px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+  font-family: 'SF Mono', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+}
+.timer-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: color 0.4s ease;
+}
 
-  /* Session dots */
-  .session-dots {
-    display: flex; gap: 8px; align-items: center;
-  }
-  .dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    background: #ddd;
-    transition: all 0.3s;
-  }
-  .dot.done { background: var(--work); }
-  .dot.current { background: var(--work); box-shadow: 0 0 0 4px rgba(231,76,60,0.2); }
+/* 按钮 */
+.controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.btn {
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px 32px;
+  border-radius: 30px;
+  transition: all 0.2s;
+  font-family: inherit;
+  outline: none;
+}
+.btn:active { transform: scale(0.96); }
 
-  /* ---- Side Panel ---- */
-  .side-panel {
-    display: flex; flex-direction: column; gap: 16px;
-  }
+.btn-start {
+  background: var(--btn-dark);
+  color: white;
+  font-size: 16px;
+  padding: 14px 48px;
+  letter-spacing: 0.5px;
+}
+.btn-start:hover { background: var(--btn-dark-hover); }
+.btn-start.running {
+  background: var(--accent);
+  box-shadow: 0 4px 16px rgba(231,76,60,0.35);
+}
+.btn-start.running:hover { background: #c0392b; }
 
-  .panel-card {
-    background: var(--card);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 24px;
-  }
-  .panel-title {
-    font-size: 14px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--text-secondary);
-    margin-bottom: 16px;
-  }
+.btn-reset {
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 10px;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.btn-reset:hover { background: var(--mode-pill-bg); color: var(--text); }
 
-  /* Stats */
-  .stats-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-  }
-  .stat {
-    text-align: center;
-    padding: 12px 8px;
-    background: #faf8f5;
-    border-radius: 12px;
-  }
-  .stat-value {
-    font-size: 28px;
-    font-weight: 700;
-  }
-  .stat-label {
-    font-size: 11px;
-    color: var(--text-secondary);
-    margin-top: 2px;
-  }
+.btn-skip {
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 10px 20px;
+  font-size: 13px;
+}
+.btn-skip:hover { color: var(--text); }
 
-  /* Task list */
-  .task-input-row {
-    display: flex; gap: 8px; margin-bottom: 12px;
-  }
-  .task-input-row input {
-    flex: 1;
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    padding: 10px 14px;
-    font-size: 14px;
-    font-family: inherit;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .task-input-row input:focus { border-color: var(--work); }
-  .task-input-row button {
-    border: none;
-    background: #2c3e50;
-    color: white;
-    border-radius: 12px;
-    padding: 10px 16px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    font-family: inherit;
-  }
-  .task-input-row button:hover { background: #1a252f; }
+/* 阶段圆点 */
+.session-dots {
+  display: flex; gap: 8px; align-items: center;
+}
+.dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--ring-track);
+  transition: all 0.3s ease;
+}
+.dot.done { background: var(--accent); }
+.dot.current { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-light); }
 
-  .task-list {
-    list-style: none;
-    max-height: 200px;
-    overflow-y: auto;
-  }
-  .task-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 0;
-    border-bottom: 1px solid #f5f0eb;
-    font-size: 14px;
-  }
-  .task-item:last-child { border-bottom: none; }
-  .task-check {
-    width: 20px; height: 20px;
-    border: 2px solid #ccc;
-    border-radius: 50%;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: all 0.2s;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px;
-    color: transparent;
-  }
-  .task-check.done {
-    background: var(--short-break);
-    border-color: var(--short-break);
-    color: white;
-  }
-  .task-text { flex: 1; }
-  .task-text.done-text { text-decoration: line-through; color: #bbb; }
-  .task-delete {
-    cursor: pointer;
-    color: transparent;
-    font-size: 16px;
-    transition: color 0.2s;
-    background: none; border: none;
-  }
-  .task-item:hover .task-delete { color: #ccc; }
-  .task-item:hover .task-delete:hover { color: var(--work); }
+/* ═══════════════════════════════════════════
+   3. 侧边面板
+   ═══════════════════════════════════════════ */
 
-  .task-active-badge {
-    font-size: 10px;
-    background: var(--work-light);
-    color: var(--work);
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-weight: 600;
-  }
+.side-panel {
+  display: flex; flex-direction: column; gap: 16px;
+}
 
-  /* Settings */
-  .setting-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 0;
-    font-size: 14px;
-  }
-  .setting-row input[type="range"] {
-    width: 100px; accent-color: var(--work);
-  }
-  .setting-row input[type="number"] {
-    width: 60px;
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    padding: 6px 10px;
-    font-size: 14px;
-    font-family: inherit;
-    text-align: center;
-    outline: none;
-  }
-  .setting-row input[type="number"]:focus { border-color: var(--work); }
-  .setting-value { color: var(--text-secondary); font-size: 13px; min-width: 36px; text-align: right; }
+.panel-card {
+  background: var(--card);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+  transition: background 0.4s ease, box-shadow 0.4s ease;
+}
+.panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  transition: color 0.4s ease;
+}
 
-  /* Toast */
-  .toast {
-    position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
-    background: #2c3e50;
-    color: white;
-    padding: 12px 28px;
-    border-radius: 30px;
-    font-size: 14px;
-    font-weight: 600;
-    opacity: 0;
-    transition: opacity 0.3s;
-    pointer-events: none;
-    z-index: 100;
-  }
-  .toast.show { opacity: 1; }
+/* 统计 */
+.stats-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.stat {
+  text-align: center;
+  padding: 12px 8px;
+  background: var(--stat-bg);
+  border-radius: 12px;
+  transition: background 0.4s ease;
+}
+.stat-value {
+  font-size: 26px;
+  font-weight: 700;
+}
+.stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  transition: color 0.4s ease;
+}
 
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+/* 图表区域 */
+.chart-section {
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  transition: border-color 0.4s ease;
+}
+.chart-toggles {
+  display: flex; gap: 4px; margin-bottom: 10px;
+}
+.chart-toggle {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 4px 12px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.chart-toggle.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.chart-toggle:hover:not(.active) { color: var(--text); border-color: var(--text-secondary); }
+.chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.chart-empty {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 20px 0;
+}
+
+/* 任务列表 */
+.task-input-row {
+  display: flex; gap: 8px; margin-bottom: 12px;
+}
+.task-input-row input {
+  flex: 1;
+  border: 2px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s;
+}
+.task-input-row input:focus { border-color: var(--accent); }
+.task-input-row input::placeholder { color: var(--text-secondary); }
+.task-input-row button {
+  border: none;
+  background: var(--btn-dark);
+  color: white;
+  border-radius: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+.task-input-row button:hover { background: var(--btn-dark-hover); }
+
+.task-list {
+  list-style: none;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.task-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  transition: border-color 0.4s ease;
+}
+.task-item:last-child { border-bottom: none; }
+.task-check {
+  width: 20px; height: 20px;
+  border: 2px solid #555;
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  color: transparent;
+}
+.task-check.done {
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+  color: white;
+}
+.task-text { flex: 1; cursor: pointer; }
+.task-text.done-text { text-decoration: line-through; color: #555; }
+.task-delete {
+  cursor: pointer;
+  color: transparent;
+  font-size: 16px;
+  transition: color 0.2s;
+  background: none; border: none;
+  font-family: inherit;
+  line-height: 1;
+}
+.task-item:hover .task-delete { color: #555; }
+.task-item:hover .task-delete:hover { color: var(--accent); }
+
+.task-active-badge {
+  font-size: 10px;
+  background: var(--accent-light);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+/* 设置 */
+.setting-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0;
+  font-size: 14px;
+}
+.setting-row input[type="range"] {
+  width: 100px; accent-color: var(--accent);
+}
+.setting-row input[type="number"] {
+  width: 60px;
+  border: 2px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 14px;
+  font-family: inherit;
+  text-align: center;
+  outline: none;
+  transition: all 0.2s;
+}
+.setting-row input[type="number"]:focus { border-color: var(--accent); }
+.setting-row input[type="checkbox"] {
+  accent-color: var(--accent); width: 18px; height: 18px;
+}
+.setting-value { color: var(--text-secondary); font-size: 13px; min-width: 36px; text-align: right; transition: color 0.4s ease; }
+
+/* 主题切换按钮 */
+.theme-btns {
+  display: flex; gap: 6px;
+}
+.theme-btn {
+  border: 2px solid var(--border);
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+}
+.theme-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+.theme-btn:hover:not(.active) { border-color: var(--text-secondary); color: var(--text); }
+
+/* Toast */
+.toast {
+  position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--toast-bg);
+  color: white;
+  padding: 12px 28px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 100;
+}
+.toast.show { opacity: 1; }
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 </style>
 </head>
 <body>
 
+<!-- ═══════════════════════════════════════════
+     2. HTML 结构
+     ═══════════════════════════════════════════ -->
+
 <div class="app">
-  <!-- Timer Section -->
+  <!-- 计时器区域 -->
   <div class="timer-card">
     <div class="modes" id="modes">
       <button class="mode-btn active" data-mode="work">🍅 专注</button>
@@ -363,114 +504,158 @@
     <div class="ring-container">
       <svg viewBox="0 0 260 260">
         <circle class="ring-bg" cx="130" cy="130" r="120"/>
-        <circle class="ring-progress" id="ringProgress" cx="130" cy="130" r="120"
+        <circle class="ring-progress" id="elRing" cx="130" cy="130" r="120"
           stroke-dasharray="753.98" stroke-dashoffset="0"/>
       </svg>
       <div class="timer-display">
-        <span class="timer-time" id="timerDisplay">25:00</span>
-        <span class="timer-label" id="timerLabel">准备开始</span>
+        <span class="timer-time" id="elTimer">25:00</span>
+        <span class="timer-label" id="elLabel">准备开始</span>
       </div>
     </div>
 
-    <div class="session-dots" id="sessionDots"></div>
+    <div class="session-dots" id="elDots"></div>
 
     <div class="controls">
-      <button class="btn btn-reset" id="btnReset" title="重置">↺</button>
-      <button class="btn btn-start paused" id="btnStart">开始专注</button>
-      <button class="btn btn-skip" id="btnSkip" title="跳过">跳过 ▸</button>
+      <button class="btn btn-reset" id="btnReset" title="重置 (R)">↺</button>
+      <button class="btn btn-start" id="btnStart">开始专注</button>
+      <button class="btn btn-skip" id="btnSkip" title="跳过 (S)">跳过 ▸</button>
     </div>
   </div>
 
-  <!-- Side Panel -->
+  <!-- 侧边面板 -->
   <div class="side-panel">
-    <!-- Stats -->
+    <!-- 统计 -->
     <div class="panel-card">
       <div class="panel-title">📊 统计</div>
       <div class="stats-grid">
         <div class="stat">
-          <div class="stat-value" id="statToday">0</div>
+          <div class="stat-value" id="elStatToday">0</div>
           <div class="stat-label">今日番茄</div>
         </div>
         <div class="stat">
-          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-value" id="elStatTotal">0</div>
           <div class="stat-label">总计番茄</div>
         </div>
         <div class="stat">
-          <div class="stat-value" id="statFocusTime">0m</div>
+          <div class="stat-value" id="elStatFocus">0m</div>
           <div class="stat-label">今日专注</div>
         </div>
         <div class="stat">
-          <div class="stat-value" id="statStreak">0</div>
+          <div class="stat-value" id="elStatStreak">0</div>
           <div class="stat-label">连续天数</div>
         </div>
       </div>
+      <!-- 历史图表 -->
+      <div class="chart-section">
+        <div class="chart-toggles">
+          <button class="chart-toggle active" data-view="week">周</button>
+          <button class="chart-toggle" data-view="month">月</button>
+        </div>
+        <svg class="chart-svg" id="elChart" viewBox="0 0 320 175"></svg>
+      </div>
     </div>
 
-    <!-- Tasks -->
+    <!-- 任务 -->
     <div class="panel-card">
       <div class="panel-title">📝 任务列表</div>
       <div class="task-input-row">
-        <input type="text" id="taskInput" placeholder="添加任务..." maxlength="80"/>
+        <input type="text" id="elTaskInput" placeholder="添加任务..." maxlength="80"/>
         <button id="btnAddTask">+</button>
       </div>
-      <ul class="task-list" id="taskList">
-        <li class="task-item" style="color: #bbb;">暂无任务，添加一个吧 ✨</li>
+      <ul class="task-list" id="elTaskList">
+        <li class="task-item" style="color: var(--text-secondary);">暂无任务，添加一个吧 ✨</li>
       </ul>
     </div>
 
-    <!-- Settings -->
+    <!-- 设置 -->
     <div class="panel-card">
       <div class="panel-title">⚙️ 设置</div>
       <div class="setting-row">
         <span>专注时长</span>
-        <input type="range" id="workDuration" min="5" max="60" value="25" step="5"/>
-        <span class="setting-value" id="workDurationVal">25分钟</span>
+        <input type="range" id="elWorkDur" min="5" max="60" value="25" step="5"/>
+        <span class="setting-value" id="elWorkDurVal">25分钟</span>
       </div>
       <div class="setting-row">
         <span>短休息</span>
-        <input type="range" id="shortBreakDuration" min="1" max="15" value="5" step="1"/>
-        <span class="setting-value" id="shortBreakDurationVal">5分钟</span>
+        <input type="range" id="elShortDur" min="1" max="15" value="5" step="1"/>
+        <span class="setting-value" id="elShortDurVal">5分钟</span>
       </div>
       <div class="setting-row">
         <span>长休息</span>
-        <input type="range" id="longBreakDuration" min="5" max="30" value="15" step="5"/>
-        <span class="setting-value" id="longBreakDurationVal">15分钟</span>
+        <input type="range" id="elLongDur" min="5" max="30" value="15" step="5"/>
+        <span class="setting-value" id="elLongDurVal">15分钟</span>
       </div>
       <div class="setting-row">
         <span>长休息间隔</span>
-        <input type="range" id="longBreakInterval" min="2" max="6" value="4" step="1"/>
-        <span class="setting-value" id="longBreakIntervalVal">4个番茄</span>
+        <input type="range" id="elLongInterval" min="2" max="6" value="4" step="1"/>
+        <span class="setting-value" id="elLongIntervalVal">4个番茄</span>
       </div>
       <div class="setting-row">
         <span>自动开始休息</span>
-        <input type="checkbox" id="autoStartBreak" checked style="accent-color: var(--work); width: 18px; height: 18px;"/>
+        <input type="checkbox" id="elAutoBreak" checked/>
       </div>
       <div class="setting-row">
         <span>自动开始专注</span>
-        <input type="checkbox" id="autoStartWork" style="accent-color: var(--work); width: 18px; height: 18px;"/>
+        <input type="checkbox" id="elAutoWork"/>
+      </div>
+      <div class="setting-row">
+        <span>主题</span>
+        <div class="theme-btns">
+          <button class="theme-btn" data-theme-val="dark" id="elThemeDark">🌙 深色</button>
+          <button class="theme-btn" data-theme-val="light" id="elThemeLight">☀️ 浅色</button>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="elToast"></div>
 
 <script>
-// ─────────── State ───────────
-const CIRCUMFERENCE = 2 * Math.PI * 120; // ~753.98
+/* ═══════════════════════════════════════════
+   3. JS: 常量 + DOM 缓存
+   ═══════════════════════════════════════════ */
+
+const CIRCUMFERENCE = 2 * Math.PI * 120; // ≈753.98
+const STORAGE_KEY = 'pomodoro_v2';
+const STORAGE_KEY_LEGACY = 'pomodoro_data';
+const MAX_HISTORY_DAYS = 90;
+const SAVE_DEBOUNCE_MS = 300;
+
+// DOM 引用缓存 — 启动时一次性获取
+const D = {};
+(function cacheDom() {
+  const ids = [
+    'elRing','elTimer','elLabel','elDots','btnStart','btnReset','btnSkip',
+    'elStatToday','elStatTotal','elStatFocus','elStatStreak',
+    'elChart','elTaskInput','elTaskList',
+    'elWorkDur','elShortDur','elLongDur','elLongInterval',
+    'elWorkDurVal','elShortDurVal','elLongDurVal','elLongIntervalVal',
+    'elAutoBreak','elAutoWork','elToast','elThemeDark','elThemeLight',
+  ];
+  for (const id of ids) D[id] = document.getElementById(id);
+})();
+
+/* ═══════════════════════════════════════════
+   4. JS: 状态 + 存储
+   ═══════════════════════════════════════════ */
 
 const state = {
-  mode: 'work',           // 'work' | 'shortBreak' | 'longBreak'
+  mode: 'work',
   isRunning: false,
-  timeLeft: 25 * 60,     // seconds
+  timeLeft: 25 * 60,
   totalTime: 25 * 60,
-  completedPomodoros: 0, // today total
-  sessionPomodoros: 0,   // in current work session (before long break)
+  endTime: 0,            // Date.now() 绝对结束时间（精度修正）
+  completedToday: 0,
+  totalPomodoros: 0,
+  sessionPomodoros: 0,
   timerId: null,
   activeTaskIndex: null,
+  dailyHistory: {},      // { "YYYY-MM-DD": { pomodoros, focusMinutes } }
+  streak: { lastDate: null, count: 0 },
+  chartView: 'week',     // 'week' | 'month'
 };
 
-// Settings
 const settings = {
   workDuration: 25,
   shortBreakDuration: 5,
@@ -478,54 +663,116 @@ const settings = {
   longBreakInterval: 4,
   autoStartBreak: true,
   autoStartWork: false,
+  theme: null,           // null=跟随系统, 'dark', 'light'
 };
 
-// ─────────── Load / Save ───────────
+let tasks = [];
+let _saveTimer = null;   // 防抖定时器
+
+/* ── 加载数据（含旧版迁移） ── */
 function loadData() {
   try {
-    const raw = localStorage.getItem('pomodoro_data');
-    if (raw) {
-      const data = JSON.parse(raw);
-      if (data.tasks) tasks = data.tasks;
-      if (data.completedToday) state.completedPomodoros = data.completedToday;
-      if (data.totalPomodoros) totalPomodoros = data.totalPomodoros;
-      if (data.streak) streakData = data.streak;
-      if (data.settings) Object.assign(settings, data.settings);
-      if (data.date) {
-        const saved = new Date(data.date);
-        const now = new Date();
-        if (saved.toDateString() !== now.toDateString()) {
-          state.completedPomodoros = 0;
-          state.sessionPomodoros = 0;
-          tasks.forEach(t => t.done = false); // reset task checkboxes daily
-        }
+    // 优先读取新版数据
+    let raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      // 尝试从旧版迁移
+      raw = localStorage.getItem(STORAGE_KEY_LEGACY);
+      if (raw) return migrateV1(raw);
+      return;
+    }
+    const data = JSON.parse(raw);
+    if (data.tasks) tasks = data.tasks;
+    if (data.completedToday != null) state.completedToday = data.completedToday;
+    if (data.totalPomodoros != null) state.totalPomodoros = data.totalPomodoros;
+    if (data.dailyHistory) state.dailyHistory = data.dailyHistory;
+    if (data.streak) state.streak = data.streak;
+    if (data.settings) Object.assign(settings, data.settings);
+    // 跨天重置
+    if (data.date) {
+      const saved = new Date(data.date);
+      const now = new Date();
+      if (saved.toDateString() !== now.toDateString()) {
+        state.completedToday = 0;
+        state.sessionPomodoros = 0;
+        tasks.forEach(t => t.done = false);
       }
     }
-  } catch(e) { /* ignore */ }
+  } catch (e) { /* 静默 */ }
 }
 
-function saveData() {
+/* ── 旧版数据迁移 ── */
+function migrateV1(raw) {
   try {
-    localStorage.setItem('pomodoro_data', JSON.stringify({
-      tasks,
-      completedToday: state.completedPomodoros,
-      totalPomodoros,
-      streak: streakData,
-      settings,
-      date: new Date().toISOString(),
-    }));
-  } catch(e) { /* ignore */ }
+    const old = JSON.parse(raw);
+    if (old.tasks) tasks = old.tasks;
+    if (old.completedToday) state.completedToday = old.completedToday;
+    if (old.totalPomodoros) state.totalPomodoros = old.totalPomodoros;
+    if (old.streak) state.streak = old.streak;
+    if (old.settings) Object.assign(settings, old.settings);
+    // 旧版没有 dailyHistory，从已有数据推断今日
+    if (state.completedToday > 0) {
+      const today = new Date().toISOString().split('T')[0];
+      state.dailyHistory[today] = {
+        pomodoros: state.completedToday,
+        focusMinutes: state.completedToday * settings.workDuration,
+      };
+    }
+    saveData(); // 立即写入新格式
+    return true;
+  } catch (e) { /* 静默 */ }
 }
 
-let tasks = [];
-let totalPomodoros = 0;
-let streakData = { lastDate: null, count: 0 };
+/* ── 保存数据（防抖） ── */
+function saveData() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    try {
+      // 裁剪历史数据
+      const keys = Object.keys(state.dailyHistory).sort();
+      while (keys.length > MAX_HISTORY_DAYS) {
+        delete state.dailyHistory[keys.shift()];
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: 2,
+        tasks,
+        completedToday: state.completedToday,
+        totalPomodoros: state.totalPomodoros,
+        dailyHistory: state.dailyHistory,
+        streak: state.streak,
+        settings,
+        date: new Date().toISOString(),
+      }));
+    } catch (e) { /* 静默 */ }
+  }, SAVE_DEBOUNCE_MS);
+}
 
-loadData();
-applySettings();
-updateStreak();
+/* ── 记录番茄完成（历史统计） ── */
+function recordPomodoro() {
+  const today = new Date().toISOString().split('T')[0];
+  if (!state.dailyHistory[today]) {
+    state.dailyHistory[today] = { pomodoros: 0, focusMinutes: 0 };
+  }
+  state.dailyHistory[today].pomodoros++;
+  state.dailyHistory[today].focusMinutes += settings.workDuration;
+}
 
-// ─────────── Timer Logic ───────────
+/* ── 更新连续天数 ── */
+function updateStreak() {
+  const today = new Date().toDateString();
+  if (state.streak.lastDate === today) return;
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  if (state.streak.lastDate === yesterday) {
+    state.streak.count++;
+  } else if (state.streak.lastDate !== today) {
+    state.streak.count = state.completedToday > 0 ? 1 : 0;
+  }
+  state.streak.lastDate = today;
+}
+
+/* ═══════════════════════════════════════════
+   5. JS: 计时器核心（精度修正版）
+   ═══════════════════════════════════════════ */
+
 function getDuration(mode) {
   if (mode === 'shortBreak') return settings.shortBreakDuration * 60;
   if (mode === 'longBreak') return settings.longBreakDuration * 60;
@@ -533,40 +780,47 @@ function getDuration(mode) {
 }
 
 function switchMode(mode) {
-  state.mode = mode;
-  state.isRunning = false;
   clearInterval(state.timerId);
   state.timerId = null;
+  state.isRunning = false;
+  state.mode = mode;
   state.timeLeft = getDuration(mode);
   state.totalTime = state.timeLeft;
-  updateDisplay();
+  state.endTime = 0;
+  updateTimerDisplay();
   updateModeButtons();
   updateRingColor();
   updateButtonState();
+  D.elLabel.textContent = '准备开始';
 }
 
 function startTimer() {
   if (state.isRunning) {
-    // Pause
+    // ── 暂停 ──
     state.isRunning = false;
     clearInterval(state.timerId);
     state.timerId = null;
     updateButtonState();
-    document.getElementById('timerLabel').textContent = '已暂停';
+    D.elLabel.textContent = '已暂停';
     return;
   }
 
+  // ── 开始/继续 ──
   state.isRunning = true;
-  document.getElementById('timerLabel').textContent = getModeLabel();
+  state.totalTime = state.timeLeft; // 剩余时间作为新的总时长
+  state.endTime = Date.now() + state.timeLeft * 1000;
+  D.elLabel.textContent = getModeLabel();
 
   state.timerId = setInterval(() => {
-    state.timeLeft--;
-    updateDisplay();
-
+    const remaining = Math.max(0, Math.ceil((state.endTime - Date.now()) / 1000));
+    if (remaining !== state.timeLeft) {
+      state.timeLeft = remaining;
+      updateTimerDisplay();
+    }
     if (state.timeLeft <= 0) {
       onTimerComplete();
     }
-  }, 1000);
+  }, 250); // 高频检查，避免错过秒边界
 
   updateButtonState();
 }
@@ -580,18 +834,16 @@ function onTimerComplete() {
   showNotification();
 
   if (state.mode === 'work') {
-    // Completed a pomodoro!
-    state.completedPomodoros++;
+    state.completedToday++;
     state.sessionPomodoros++;
-    totalPomodoros++;
+    state.totalPomodoros++;
+    recordPomodoro();
     updateStreak();
 
-    // Mark active task with a pomodoro
     if (state.activeTaskIndex !== null && tasks[state.activeTaskIndex]) {
       tasks[state.activeTaskIndex].pomodoros = (tasks[state.activeTaskIndex].pomodoros || 0) + 1;
     }
 
-    // Determine next break
     if (state.sessionPomodoros >= settings.longBreakInterval) {
       state.sessionPomodoros = 0;
       if (settings.autoStartBreak) { switchMode('longBreak'); startTimer(); }
@@ -601,27 +853,28 @@ function onTimerComplete() {
       else switchMode('shortBreak');
     }
   } else {
-    // Break finished
     if (settings.autoStartWork) { switchMode('work'); startTimer(); }
     else switchMode('work');
   }
 
-  updateDisplay();
+  updateTimerDisplay();
   updateSessionDots();
   updateStats();
+  drawChart();
   renderTasks();
   saveData();
 }
 
 function resetTimer() {
-  state.isRunning = false;
   clearInterval(state.timerId);
   state.timerId = null;
+  state.isRunning = false;
   state.timeLeft = getDuration(state.mode);
   state.totalTime = state.timeLeft;
-  updateDisplay();
+  state.endTime = 0;
+  updateTimerDisplay();
   updateButtonState();
-  document.getElementById('timerLabel').textContent = '准备开始';
+  D.elLabel.textContent = '准备开始';
 }
 
 function skipTimer() {
@@ -630,7 +883,6 @@ function skipTimer() {
   state.isRunning = false;
 
   if (state.mode === 'work') {
-    // Skip work → go to break
     if (state.sessionPomodoros >= settings.longBreakInterval) {
       state.sessionPomodoros = 0;
       switchMode('longBreak');
@@ -640,30 +892,44 @@ function skipTimer() {
   } else {
     switchMode('work');
   }
-  updateDisplay();
   updateSessionDots();
-  document.getElementById('timerLabel').textContent = '准备开始';
+  D.elLabel.textContent = '准备开始';
 }
 
-// ─────────── Display ───────────
-function updateDisplay() {
+// 页面可见性变化时校准
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && state.isRunning) {
+    const remaining = Math.max(0, Math.ceil((state.endTime - Date.now()) / 1000));
+    if (remaining !== state.timeLeft) {
+      state.timeLeft = remaining;
+      updateTimerDisplay();
+    }
+    if (state.timeLeft <= 0) {
+      onTimerComplete();
+    }
+  }
+});
+
+/* ═══════════════════════════════════════════
+   6. JS: 渲染函数（按需更新）
+   ═══════════════════════════════════════════ */
+
+function updateTimerDisplay() {
   const mins = Math.floor(state.timeLeft / 60);
   const secs = state.timeLeft % 60;
-  document.getElementById('timerDisplay').textContent =
-    `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  D.elTimer.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 
-  // Update ring
-  const progress = state.timeLeft / state.totalTime;
-  const offset = CIRCUMFERENCE * (1 - progress);
-  document.getElementById('ringProgress').style.strokeDashoffset = offset;
+  // 环形进度
+  const progress = state.totalTime > 0 ? state.timeLeft / state.totalTime : 1;
+  D.elRing.style.strokeDashoffset = CIRCUMFERENCE * (1 - progress);
 
-  // Update page title
-  const modeEmoji = state.mode === 'work' ? '🍅' : state.mode === 'shortBreak' ? '☕' : '🌿';
-  document.title = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')} ${modeEmoji} 番茄钟`;
+  // 页面标题
+  const emoji = state.mode === 'work' ? '🍅' : state.mode === 'shortBreak' ? '☕' : '🌿';
+  document.title = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')} ${emoji} 番茄钟`;
 }
 
 function updateRingColor() {
-  const ring = document.getElementById('ringProgress');
+  const ring = D.elRing;
   ring.classList.remove('break-mode', 'long-break-mode');
   if (state.mode === 'shortBreak') ring.classList.add('break-mode');
   if (state.mode === 'longBreak') ring.classList.add('long-break-mode');
@@ -676,17 +942,15 @@ function updateModeButtons() {
 }
 
 function updateButtonState() {
-  const btn = document.getElementById('btnStart');
-  const label = document.getElementById('timerLabel');
-
   if (state.isRunning) {
-    btn.textContent = '暂停';
-    btn.classList.remove('paused');
-    label.textContent = getModeLabel();
+    D.btnStart.textContent = '暂停';
+    D.btnStart.classList.add('running');
+    D.elLabel.textContent = getModeLabel();
   } else {
-    btn.textContent = state.timeLeft === getDuration(state.mode) ? '开始专注' : '继续';
-    btn.classList.add('paused');
-    label.textContent = state.timeLeft === getDuration(state.mode) ? '准备开始' : '已暂停';
+    const fresh = state.timeLeft === getDuration(state.mode);
+    D.btnStart.textContent = fresh ? '开始专注' : '继续';
+    D.btnStart.classList.remove('running');
+    D.elLabel.textContent = fresh ? '准备开始' : '已暂停';
   }
 }
 
@@ -697,7 +961,6 @@ function getModeLabel() {
 }
 
 function updateSessionDots() {
-  const container = document.getElementById('sessionDots');
   const total = settings.longBreakInterval;
   let html = '';
   for (let i = 0; i < total; i++) {
@@ -705,36 +968,24 @@ function updateSessionDots() {
     else if (i === state.sessionPomodoros && state.mode === 'work') html += '<span class="dot current"></span>';
     else html += '<span class="dot"></span>';
   }
-  container.innerHTML = html;
+  D.elDots.innerHTML = html;
 }
 
 function updateStats() {
-  document.getElementById('statToday').textContent = state.completedPomodoros;
-  document.getElementById('statTotal').textContent = totalPomodoros;
-  document.getElementById('statFocusTime').textContent =
-    Math.floor(state.completedPomodoros * settings.workDuration / 60) + 'h' +
-    (state.completedPomodoros * settings.workDuration % 60 > 0 ?
-     ' ' + (state.completedPomodoros * settings.workDuration % 60) + 'm' : '');
-  document.getElementById('statStreak').textContent = streakData.count;
+  D.elStatToday.textContent = state.completedToday;
+  D.elStatTotal.textContent = state.totalPomodoros;
+  const totalMin = state.completedToday * settings.workDuration;
+  D.elStatFocus.textContent = totalMin >= 60
+    ? Math.floor(totalMin / 60) + 'h ' + (totalMin % 60 > 0 ? totalMin % 60 + 'm' : '')
+    : totalMin + 'm';
+  D.elStatStreak.textContent = state.streak.count;
 }
 
-function updateStreak() {
-  const today = new Date().toDateString();
-  if (streakData.lastDate === today) return;
-  const yesterday = new Date(Date.now() - 86400000).toDateString();
-  if (streakData.lastDate === yesterday) {
-    streakData.count++;
-  } else if (streakData.lastDate !== today) {
-    streakData.count = 1;
-  }
-  streakData.lastDate = today;
-}
+/* ── 音频 + 通知 ── */
 
-// ─────────── Sound ───────────
 function playSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // Play a pleasant chime
     const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
     notes.forEach((freq, i) => {
       const osc = ctx.createOscillator();
@@ -748,35 +999,34 @@ function playSound() {
       osc.start(ctx.currentTime + i * 0.15);
       osc.stop(ctx.currentTime + i * 0.15 + 0.4);
     });
-  } catch(e) { /* ignore */ }
+  } catch (e) { /* 静默 */ }
 }
 
 function showNotification() {
   const title = state.mode === 'work' ? '🍅 番茄完成！' :
     state.mode === 'shortBreak' ? '☕ 休息结束！' : '🌿 长休息结束！';
   const body = state.mode === 'work' ?
-    `太棒了！已完成 ${state.completedPomodoros} 个番茄。` :
+    `太棒了！已完成 ${state.completedToday} 个番茄。` :
     '准备好开始新的番茄了吗？';
 
-  // Browser notification
   if ('Notification' in window && Notification.permission === 'granted') {
     new Notification(title, { body, icon: '🍅' });
   }
 
-  // Toast
-  const toast = document.getElementById('toast');
-  toast.textContent = title + ' ' + body;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 3000);
+  D.elToast.textContent = title + ' ' + body;
+  D.elToast.classList.add('show');
+  setTimeout(() => D.elToast.classList.remove('show'), 3000);
 }
 
-// ─────────── Tasks ───────────
+/* ═══════════════════════════════════════════
+   7. JS: 任务管理
+   ═══════════════════════════════════════════ */
+
 function addTask() {
-  const input = document.getElementById('taskInput');
-  const text = input.value.trim();
+  const text = D.elTaskInput.value.trim();
   if (!text) return;
   tasks.push({ text, done: false, pomodoros: 0 });
-  input.value = '';
+  D.elTaskInput.value = '';
   renderTasks();
   saveData();
 }
@@ -804,49 +1054,202 @@ function setActiveTask(index) {
 }
 
 function renderTasks() {
-  const list = document.getElementById('taskList');
   if (tasks.length === 0) {
-    list.innerHTML = '<li class="task-item" style="color: #bbb;">暂无任务，添加一个吧 ✨</li>';
+    D.elTaskList.innerHTML = `<li class="task-item" style="color: var(--text-secondary);">暂无任务，添加一个吧 ✨</li>`;
     return;
   }
-  list.innerHTML = tasks.map((t, i) => `
+  D.elTaskList.innerHTML = tasks.map((t, i) => `
     <li class="task-item">
-      <div class="task-check ${t.done ? 'done' : ''}" onclick="toggleTask(${i})">
+      <div class="task-check ${t.done ? 'done' : ''}" data-action="toggle" data-index="${i}">
         ${t.done ? '✓' : ''}
       </div>
-      <span class="task-text ${t.done ? 'done-text' : ''}" onclick="setActiveTask(${i})" style="cursor:pointer;">
-        ${t.text}
-        ${t.pomodoros ? ` (${t.pomodoros}🍅)` : ''}
+      <span class="task-text ${t.done ? 'done-text' : ''}" data-action="active" data-index="${i}">
+        ${escapeHtml(t.text)}
+        ${t.pomodoros ? ` <span style="font-size:12px;">(${t.pomodoros}🍅)</span>` : ''}
       </span>
       ${state.activeTaskIndex === i ? '<span class="task-active-badge">进行中</span>' : ''}
-      <button class="task-delete" onclick="deleteTask(${i})">×</button>
+      <button class="task-delete" data-action="delete" data-index="${i}">×</button>
     </li>
   `).join('');
 }
 
-// ─────────── Settings ───────────
+function escapeHtml(str) {
+  const el = document.createElement('span');
+  el.textContent = str;
+  return el.innerHTML;
+}
+
+// 任务列表事件委托
+D.elTaskList.addEventListener('click', (e) => {
+  const target = e.target.closest('[data-action]');
+  if (!target) return;
+  const index = parseInt(target.dataset.index);
+  const action = target.dataset.action;
+  if (action === 'toggle') toggleTask(index);
+  else if (action === 'delete') deleteTask(index);
+  else if (action === 'active') setActiveTask(index);
+});
+
+/* ═══════════════════════════════════════════
+   8. JS: 设置 + 主题切换
+   ═══════════════════════════════════════════ */
+
 function applySettings() {
-  document.getElementById('workDuration').value = settings.workDuration;
-  document.getElementById('shortBreakDuration').value = settings.shortBreakDuration;
-  document.getElementById('longBreakDuration').value = settings.longBreakDuration;
-  document.getElementById('longBreakInterval').value = settings.longBreakInterval;
-  document.getElementById('autoStartBreak').checked = settings.autoStartBreak;
-  document.getElementById('autoStartWork').checked = settings.autoStartWork;
+  D.elWorkDur.value = settings.workDuration;
+  D.elShortDur.value = settings.shortBreakDuration;
+  D.elLongDur.value = settings.longBreakDuration;
+  D.elLongInterval.value = settings.longBreakInterval;
+  D.elAutoBreak.checked = settings.autoStartBreak;
+  D.elAutoWork.checked = settings.autoStartWork;
   updateSettingsLabels();
+  applyTheme();
 }
 
 function updateSettingsLabels() {
-  document.getElementById('workDurationVal').textContent = settings.workDuration + '分钟';
-  document.getElementById('shortBreakDurationVal').textContent = settings.shortBreakDuration + '分钟';
-  document.getElementById('longBreakDurationVal').textContent = settings.longBreakDuration + '分钟';
-  document.getElementById('longBreakIntervalVal').textContent = settings.longBreakInterval + '个番茄';
+  D.elWorkDurVal.textContent = settings.workDuration + '分钟';
+  D.elShortDurVal.textContent = settings.shortBreakDuration + '分钟';
+  D.elLongDurVal.textContent = settings.longBreakDuration + '分钟';
+  D.elLongIntervalVal.textContent = settings.longBreakInterval + '个番茄';
 }
 
-// ─────────── Event Listeners ───────────
-document.getElementById('btnStart').addEventListener('click', startTimer);
-document.getElementById('btnReset').addEventListener('click', resetTimer);
-document.getElementById('btnSkip').addEventListener('click', skipTimer);
+/* ── 主题管理 ── */
+function getSystemTheme() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
 
+function applyTheme() {
+  const theme = settings.theme || getSystemTheme();
+  document.documentElement.setAttribute('data-theme', theme);
+  D.elThemeDark.classList.toggle('active', theme === 'dark');
+  D.elThemeLight.classList.toggle('active', theme === 'light');
+}
+
+function setTheme(theme) {
+  settings.theme = theme; // null=跟随系统, 'dark', 'light'
+  applyTheme();
+  saveData();
+}
+
+// 监听系统主题变化（仅在未手动设置时跟随）
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (!settings.theme) applyTheme();
+});
+
+/* ═══════════════════════════════════════════
+   9. JS: SVG 图表绘制（零依赖）
+   ═══════════════════════════════════════════ */
+
+function getChartData(days) {
+  const result = [];
+  const now = new Date();
+  const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    const entry = state.dailyHistory[key] || { pomodoros: 0, focusMinutes: 0 };
+    result.push({
+      date: d.toDateString(),
+      key,
+      label: days <= 7 ? dayNames[d.getDay()] : String(d.getDate()),
+      fullLabel: days <= 7 ? '周' + dayNames[d.getDay()] : (d.getMonth() + 1) + '/' + d.getDate(),
+      pomodoros: entry.pomodoros,
+      focusMinutes: entry.focusMinutes,
+      isToday: d.toDateString() === now.toDateString(),
+    });
+  }
+  return result;
+}
+
+function drawChart() {
+  const svg = D.elChart;
+  const days = state.chartView === 'week' ? 7 : 30;
+  const data = getChartData(days);
+  const maxVal = Math.max(1, ...data.map(d => d.pomodoros));
+  const todayStr = new Date().toDateString();
+
+  const W = 320, H = 175;
+  const pad = { top: 22, right: 12, bottom: 26, left: 12 };
+  const cw = W - pad.left - pad.right;  // chart width
+  const ch = H - pad.top - pad.bottom;  // chart height
+  const barW = days <= 7 ? Math.min(30, (cw - (days + 1) * 6) / days) : Math.min(8, (cw - (days + 1) * 1.5) / days);
+  const gap = (cw - barW * days) / (days + 1);
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const barColor = isDark ? '#3a5a8c' : '#bcccdc';
+  const barToday = '#e74c3c';
+  const textColor = isDark ? '#8b8b9e' : '#7f8c8d';
+  const gridColor = isDark ? '#2a2a3e' : '#e8e0d8';
+
+  let html = '';
+
+  // 水平网格线 (4条)
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (ch / 4) * i;
+    html += `<line x1="${pad.left}" y1="${y}" x2="${W - pad.right}" y2="${y}"
+              stroke="${gridColor}" stroke-dasharray="3,3" stroke-width="0.6"/>`;
+  }
+
+  // 柱子
+  data.forEach((d, i) => {
+    const x = pad.left + gap + i * (barW + gap);
+    const h = maxVal > 0 ? (d.pomodoros / maxVal) * ch : 0;
+    const y = pad.top + ch - h;
+    const fill = d.isToday ? barToday : barColor;
+    const opacity = d.isToday ? 1 : 0.65;
+    const rx = days <= 7 ? 4 : 2;
+
+    html += `<rect x="${x.toFixed(1)}" y="${Math.max(pad.top + ch - 0.5, y).toFixed(1)}"
+              width="${barW.toFixed(1)}" height="${Math.max(0.5, h).toFixed(1)}" rx="${rx}"
+              fill="${fill}" opacity="${opacity}">
+              <title>${d.fullLabel}: ${d.pomodoros} 个番茄</title></rect>`;
+
+    // 柱顶数值
+    if (d.pomodoros > 0) {
+      html += `<text x="${(x + barW / 2).toFixed(1)}" y="${(y - 4).toFixed(1)}"
+                text-anchor="middle" font-size="9" fill="${d.isToday ? barToday : textColor}"
+                font-weight="${d.isToday ? '700' : '400'}">${d.pomodoros}</text>`;
+    }
+
+    // 底部标签
+    if (days <= 7 || i % 5 === 0 || i === days - 1) {
+      html += `<text x="${(x + barW / 2).toFixed(1)}" y="${H - 7}"
+                text-anchor="middle" font-size="9" fill="${textColor}"
+                font-weight="${d.isToday ? '700' : '400'}">${d.label}</text>`;
+    }
+  });
+
+  // 今日指示条
+  if (days > 7) {
+    const todayIdx = data.findIndex(d => d.isToday);
+    if (todayIdx >= 0) {
+      const tx = pad.left + gap + todayIdx * (barW + gap) + barW / 2;
+      html += `<text x="${tx.toFixed(1)}" y="${pad.top - 6}" text-anchor="middle"
+                font-size="9" fill="${barToday}" font-weight="700">今天</text>`;
+    }
+  }
+
+  svg.innerHTML = html;
+}
+
+function setChartView(view) {
+  state.chartView = view;
+  document.querySelectorAll('.chart-toggle').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === view);
+  });
+  drawChart();
+}
+
+/* ═══════════════════════════════════════════
+   10. JS: 事件绑定
+   ═══════════════════════════════════════════ */
+
+// 计时器按钮
+D.btnStart.addEventListener('click', startTimer);
+D.btnReset.addEventListener('click', resetTimer);
+D.btnSkip.addEventListener('click', skipTimer);
+
+// 模式切换
 document.getElementById('modes').addEventListener('click', (e) => {
   const btn = e.target.closest('.mode-btn');
   if (!btn) return;
@@ -854,92 +1257,92 @@ document.getElementById('modes').addEventListener('click', (e) => {
   updateSessionDots();
 });
 
+// 添加任务
+D.elTaskInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addTask(); });
 document.getElementById('btnAddTask').addEventListener('click', addTask);
-document.getElementById('taskInput').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') addTask();
+
+// 设置 — 滑动条
+function bindSetting(id, key, transform) {
+  D[id].addEventListener('input', (e) => {
+    settings[key] = transform ? transform(e.target.value) : parseInt(e.target.value);
+    updateSettingsLabels();
+    // 非运行时更新剩余时间
+    const modeMap = {
+      elWorkDur: 'work', elShortDur: 'shortBreak', elLongDur: 'longBreak',
+    };
+    if (modeMap[id] && state.mode === modeMap[id] && !state.isRunning) {
+      state.timeLeft = getDuration(state.mode);
+      state.totalTime = state.timeLeft;
+      updateTimerDisplay();
+    }
+    if (key === 'longBreakInterval') updateSessionDots();
+    if (key === 'workDuration') updateStats();
+    saveData();
+  });
+}
+bindSetting('elWorkDur', 'workDuration');
+bindSetting('elShortDur', 'shortBreakDuration');
+bindSetting('elLongDur', 'longBreakDuration');
+bindSetting('elLongInterval', 'longBreakInterval');
+
+// 设置 — 复选框
+D.elAutoBreak.addEventListener('change', (e) => { settings.autoStartBreak = e.target.checked; saveData(); });
+D.elAutoWork.addEventListener('change', (e) => { settings.autoStartWork = e.target.checked; saveData(); });
+
+// 主题切换
+D.elThemeDark.addEventListener('click', () => setTheme('dark'));
+D.elThemeLight.addEventListener('click', () => setTheme('light'));
+
+// 图表视图切换
+document.querySelector('.chart-toggles').addEventListener('click', (e) => {
+  const btn = e.target.closest('.chart-toggle');
+  if (!btn) return;
+  setChartView(btn.dataset.view);
 });
 
-// Settings
-document.getElementById('workDuration').addEventListener('input', (e) => {
-  settings.workDuration = parseInt(e.target.value);
-  updateSettingsLabels();
-  if (state.mode === 'work' && !state.isRunning) {
+// 键盘快捷键
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  switch (e.code) {
+    case 'Space': e.preventDefault(); startTimer(); break;
+    case 'KeyR': resetTimer(); break;
+    case 'KeyS': skipTimer(); break;
+    case 'Digit1': switchMode('work'); updateSessionDots(); break;
+    case 'Digit2': switchMode('shortBreak'); updateSessionDots(); break;
+    case 'Digit3': switchMode('longBreak'); updateSessionDots(); break;
+  }
+});
+
+/* ═══════════════════════════════════════════
+   11. JS: 初始化
+   ═══════════════════════════════════════════ */
+
+function init() {
+  loadData();
+  applySettings();
+  updateStreak();
+  applyTheme();
+
+  if (state.mode === 'work') {
     state.timeLeft = settings.workDuration * 60;
     state.totalTime = state.timeLeft;
-    updateDisplay();
   }
-  updateStats();
-  saveData();
-});
-document.getElementById('shortBreakDuration').addEventListener('input', (e) => {
-  settings.shortBreakDuration = parseInt(e.target.value);
-  updateSettingsLabels();
-  if (state.mode === 'shortBreak' && !state.isRunning) {
-    state.timeLeft = settings.shortBreakDuration * 60;
-    state.totalTime = state.timeLeft;
-    updateDisplay();
-  }
-  saveData();
-});
-document.getElementById('longBreakDuration').addEventListener('input', (e) => {
-  settings.longBreakDuration = parseInt(e.target.value);
-  updateSettingsLabels();
-  if (state.mode === 'longBreak' && !state.isRunning) {
-    state.timeLeft = settings.longBreakDuration * 60;
-    state.totalTime = state.timeLeft;
-    updateDisplay();
-  }
-  saveData();
-});
-document.getElementById('longBreakInterval').addEventListener('input', (e) => {
-  settings.longBreakInterval = parseInt(e.target.value);
-  updateSettingsLabels();
+  updateTimerDisplay();
+  updateModeButtons();
+  updateRingColor();
   updateSessionDots();
-  saveData();
-});
-document.getElementById('autoStartBreak').addEventListener('change', (e) => {
-  settings.autoStartBreak = e.target.checked;
-  saveData();
-});
-document.getElementById('autoStartWork').addEventListener('change', (e) => {
-  settings.autoStartWork = e.target.checked;
-  saveData();
-});
+  updateStats();
+  renderTasks();
+  drawChart();
+  D.elLabel.textContent = '准备开始';
 
-// Keyboard shortcuts
-document.addEventListener('keydown', (e) => {
-  if (e.target.tagName === 'INPUT') return; // Don't trigger when typing
-  if (e.code === 'Space') {
-    e.preventDefault();
-    startTimer();
-  } else if (e.code === 'KeyR') {
-    resetTimer();
-  } else if (e.code === 'KeyS') {
-    skipTimer();
-  } else if (e.code === 'Digit1') {
-    switchMode('work');
-    updateSessionDots();
-  } else if (e.code === 'Digit2') {
-    switchMode('shortBreak');
-    updateSessionDots();
-  } else if (e.code === 'Digit3') {
-    switchMode('longBreak');
-    updateSessionDots();
+  // 请求通知权限
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
   }
-});
-
-// ─────────── Init ───────────
-if ('Notification' in window && Notification.permission === 'default') {
-  Notification.requestPermission();
 }
 
-applySettings();
-updateDisplay();
-updateModeButtons();
-updateSessionDots();
-updateStats();
-renderTasks();
-document.getElementById('timerLabel').textContent = '准备开始';
+init();
 </script>
 </body>
 </html>
