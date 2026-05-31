@@ -6,7 +6,7 @@
 
 ```
 CC_Project/
-├── index.html             # 主应用（纯 HTML/CSS/JS 单文件）
+├── pomodoro.html          # 主应用（纯 HTML/CSS/JS 单文件）
 ├── .vscode/
 │   ├── settings.json      # VS Code 工作区设置
 │   ├── tasks.json         # 快捷任务
@@ -23,7 +23,7 @@ CC_Project/
 
 ## 运行方式
 
-- 直接在浏览器打开 `index.html`
+- 直接在浏览器打开 `pomodoro.html`
 - 或用 Live Server 预览（VS Code 右下角 → "Go Live"）
 
 ## 功能模块
