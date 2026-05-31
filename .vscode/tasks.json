@@ -1,0 +1,59 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🍅 打开番茄钟",
+      "type": "shell",
+      "command": "start pomodoro.html",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "never"
+      }
+    },
+    {
+      "label": "🍅 启动 Claude Code",
+      "type": "shell",
+      "command": "claude",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "🍅 用 Live Server 预览",
+      "type": "shell",
+      "command": "start http://127.0.0.1:5500/pomodoro.html",
+      "problemMatcher": [],
+      "dependsOn": [],
+      "presentation": {
+        "reveal": "never"
+      }
+    },
+    {
+      "label": "📋 Git 查看状态",
+      "type": "shell",
+      "command": "git status",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "focus": false
+      }
+    },
+    {
+      "label": "📋 Git 提交",
+      "type": "shell",
+      "command": "git add -A && git commit",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "focus": true
+      }
+    }
+  ]
+}

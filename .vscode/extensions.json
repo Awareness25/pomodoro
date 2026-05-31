@@ -1,0 +1,19 @@
+{
+  "recommendations": [
+    // 必装 — Claude Code AI 助手
+    "anthropic.claude-code",
+
+    // 实时预览 HTML
+    "ritwickdey.liveserver",
+
+    // 代码格式化
+    "esbenp.prettier-vscode",
+
+    // HTML/CSS 智能提示
+    "formulahendry.auto-rename-tag",
+    "pranaygp.vscode-css-peek",
+
+    // 图标主题
+    "pkief.material-icon-theme"
+  ]
+}

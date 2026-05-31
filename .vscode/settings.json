@@ -1,0 +1,40 @@
+{
+  // ── 编辑器 ──
+  "editor.fontSize": 15,
+  "editor.tabSize": 2,
+  "editor.minimap.enabled": false,
+  "editor.wordWrap": "on",
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  // ── 终端（Claude Code 在这里运行） ──
+  "terminal.integrated.fontSize": 14,
+  "terminal.integrated.defaultLocation": "editor",
+  "terminal.integrated.defaultProfile.windows": "Git Bash",
+
+  // ── Claude Code 扩展 ──
+  "claude-code.terminalSettings": {
+    "fontSize": 14,
+    "cursorStyle": "line"
+  },
+
+  // ── 文件排除 ──
+  "files.exclude": {
+    "**/.git": false,
+    "**/.claude": false
+  },
+
+  // ── 自动保存 ──
+  "files.autoSave": "onFocusChange",
+
+  // ── 预览模式（单击文件在临时标签打开，双击保持） ──
+  "workbench.editor.enablePreview": true,
+
+  // ── HTML/CSS 支持 ──
+  "html.format.enable": true,
+  "css.validate": true,
+
+  // ── 浏览器打开 ──
+  "liveServer.settings.donotShowInfoMsg": true,
+  "liveServer.settings.root": "/"
+}
